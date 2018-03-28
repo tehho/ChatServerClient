@@ -5,4 +5,8 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ChatLibrary2\ChatLibrary2.csproj" />
+  </ItemGroup>
+
 </Project>
