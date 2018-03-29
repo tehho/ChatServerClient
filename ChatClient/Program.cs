@@ -116,7 +116,11 @@ namespace ChatClient
                 return;
             }
 
-            if (commando.Contains("connect"))
+            if (commando == "sethost")
+            {
+                remoteName = list[2];
+            }
+            else if (commando.Contains("connect"))
             {
                 if (client.Connect(remoteName, remotePort));
                 {
