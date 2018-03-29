@@ -119,10 +119,11 @@ namespace ChatClient
             if (commando == "sethost")
             {
                 remoteName = list[2];
+                StatusMessage($"Setting target to {list[2]}");
             }
             else if (commando.Contains("connect"))
             {
-                if (client.Connect(remoteName, remotePort));
+                if (client.Connect(remoteName, remotePort))
                 {
                     StatusMessage("Starting receiving from server...");
                     client.StartReceiving((data) =>
@@ -142,6 +143,10 @@ namespace ChatClient
 
                         }
                     });
+                }
+                else
+                {
+                    StatusMessage("Connection failed...");
                 }
             }
         }

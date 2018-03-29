@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Data;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace ChatClient
@@ -26,14 +28,67 @@ namespace ChatClient
             _name = name;
         }
 
+        public bool IsIP(string data)
+        {
+            var list = data.Split('.');
+            if (list.Length != 4)
+                return false;
+            try
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    var test = byte.Parse(list[i]);
+
+                }
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        IPAddress ToIP(string address)
+        {
+            var list = address.Split('.');
+            if (list.Length != 4)
+                throw new ArgumentException("IPAddress not . indented.", nameof(address));
+
+            try
+            {
+                byte[] temp = new byte[4];
+                for (int i = 0; i < 4; i++)
+                {
+                    temp[i] = byte.Parse(list[i]);
+                }
+
+                return new IPAddress(temp);
+            }
+            catch (Exception e)
+            {
+                throw new ArgumentException("Sum ting wen wong");
+            }
+        }
+
         public bool Connect(string remoteName, int remotePort)
         {
             try
             {
-                Program.StatusMessage("Querying for host IP from DNS");
-                var resolvedHost = Dns.GetHostEntry(remoteName);
+                IPAddress[] addressList;
+                if (IsIP(remoteName))
+                {
+                    addressList = new IPAddress[1];
+                    addressList[0] = ToIP(remoteName);
+                }
+                else
+                {
+                    Program.StatusMessage("Querying for host IP from DNS");
+                    var resolvedHost = Dns.GetHostEntry(remoteName);
+                    addressList = resolvedHost.AddressList;
+                }
 
-                foreach (var addr in resolvedHost.AddressList)
+                foreach (var addr in addressList) 
                 {
                     _socket = new Socket(addr.AddressFamily, _socketType, _protocolType);
                     try
@@ -55,12 +110,15 @@ namespace ChatClient
                         Program.StatusMessage($"Connection failed...");
                         _socket.Close();
                         _socket = null;
+                        _destination = null;
                         continue;
                     }
                 }
             }
             catch (Exception e)
             {
+                _destination = null;
+                _socket = null;
                 Program.ErrorMessage(e.Message);
             }
 
