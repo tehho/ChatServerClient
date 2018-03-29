@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -15,8 +16,7 @@ namespace ChatClient
         private Socket _socket;
         private List<Client> _client;
 
-        private Thread _listingnThread;
-        private bool running;
+        private ThreadWraper _listeningThread;
 
 
         public Server()
@@ -26,7 +26,7 @@ namespace ChatClient
             _socketType = SocketType.Stream;
             _protocolType = ProtocolType.Tcp;
             _client = new List<Client>();
-            _listingnThread = null;
+            _listeningThread = null;
         }
 
         public void StartListning()
@@ -38,10 +38,8 @@ namespace ChatClient
             _socket.Listen(1);
             
             
-            _listingnThread = new Thread(() =>
+            _listeningThread = new ThreadWraper(() =>
             {
-                while (running)
-                {
                     try
                     {
                         Socket stemp = _socket.Accept();
@@ -56,21 +54,19 @@ namespace ChatClient
                     }
                     catch (SocketException e)
                     {
-
-                    }
                         
-                }
+                    }
             });
 
-            running = true;
-            _listingnThread.Start();
+            _listeningThread.Start();
         }
 
         public void Close()
         {
-            _client?.ForEach(client => client.Shutdown());
+            _client?.ForEach(client => client?.Shutdown());
 
-            running = false;
+            _listeningThread?.Abort();
+
             _socket?.Close();
         }
 
@@ -87,15 +83,33 @@ namespace ChatClient
 
         public void Send(PackageData data)
         {
-            _client.ForEach(client => client.Send(data));
+            for (int i = 0; i < _client.Count; i++)
+            {
+                try
+                {
+                    _client[i].Send(data);
+                }
+                catch (SocketException e)
+                {
+                    _client.RemoveAt(i);
+                    i--;
+                }
+            }
         }
 
         void Remove(string name)
         {
-            _client.RemoveAll((client) => client.Name == name);
+            var list = _client.Where((client) => client.Name == name);
+
+            _client.RemoveAll((client) => list.Contains(client));
+
+            foreach (var client in list)
+            {
+                client.Shutdown();
+            }
         }
 
-        void DecodeMessage(PackageData data, bool thread_running)
+        void DecodeMessage(PackageData data)
         {
             try
             {
@@ -112,6 +126,7 @@ namespace ChatClient
                 else
                 {
                     Program.StatusMessage($"{name} said {message}");
+                    Send(data);
                 }
             }
             catch (Exception e)

@@ -40,6 +40,12 @@
   <ItemGroup>
     <Compile Include="PackageData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Thread.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Threading.Thread">
+      <HintPath>..\..\..\..\Program Files\dotnet\sdk\NuGetFallbackFolder\microsoft.netcore.app\2.0.0\ref\netcoreapp2.0\System.Threading.Thread.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
 </Project>

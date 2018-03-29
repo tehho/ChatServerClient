@@ -14,8 +14,7 @@ namespace ChatClient
         private bool _udpConnect;
         private IPEndPoint _destination;
         private string _name;
-        private Thread _receiveThread;
-        private bool running;
+        private ThreadWraper _receiveThread;
 
         public Client(string name)
         {
@@ -25,21 +24,21 @@ namespace ChatClient
             _udpConnect = false;
             _destination = null;
             _name = name;
-            running = false;
         }
 
         public bool Connect(string remoteName, int remotePort)
         {
             try
             {
+                Program.StatusMessage("Querying for host IP from DNS");
                 var resolvedHost = Dns.GetHostEntry(remoteName);
 
                 foreach (var addr in resolvedHost.AddressList)
                 {
                     _socket = new Socket(addr.AddressFamily, _socketType, _protocolType);
-
                     try
                     {
+                        Program.StatusMessage($"Attempting to connect to server: {addr}");
                         _destination = new IPEndPoint(addr, remotePort);
 
                         if (_protocolType == ProtocolType.Udp && !_udpConnect)
@@ -48,9 +47,12 @@ namespace ChatClient
                         }
 
                         _socket.Connect(_destination);
+                        Program.StatusMessage($"Connection is OK...");
+                        _socket.Blocking = false;
                     }
                     catch (SocketException e)
                     {
+                        Program.StatusMessage($"Connection failed...");
                         _socket.Close();
                         _socket = null;
                         continue;
@@ -67,22 +69,17 @@ namespace ChatClient
 
         public void StartReceiving(Action<PackageData> Decode)
         {
-            _receiveThread = new Thread(() =>
+            _receiveThread = new ThreadWraper(() =>
             {
-                while (running)
-                {
                     Decode(Receive());
-                }
             });
-
-
-            running = true;
             _receiveThread.Start();
         }
 
         public void SendMessage(string message)
         {
             PackageData data = new PackageData();
+
             data.Add(_name);
             data.Add(message);
 
@@ -159,6 +156,8 @@ namespace ChatClient
                 test.Add(_name);
 
                 Send(test);
+
+                _receiveThread.Abort();
 
                 _socket.Shutdown(SocketShutdown.Both);
                 _socket.Close();

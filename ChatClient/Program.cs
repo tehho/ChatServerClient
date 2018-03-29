@@ -1,70 +1,58 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using System.Threading;
 
 namespace ChatClient
 {
     class Program
     {
-        private const int SIO_UDP_CONNRESET = -1744830452;
+        private const int SIO_UDP_CONNRESET = -174830452;
+        private static Client client;
+        private static bool running;
+        private static string remoteName;
+        private static int remotePort;
+
+        private static ConsoleWindowFrame window;
+
 
         static void Main(string[] args)
         {
-            string remoteName = "localhost", textMessage = "Client: This is a test";
-            int remotePort = 5150;
-            bool running = true;
+            window = new ConsoleWindowFrame
+            {
+                Width = 70,
+                Height = 20
+            };
 
-            PackageData test = new PackageData();
-
-
-            Print("Enter your name");
-            string input = Console.ReadLine();
-            test.Add(input);
-            test.Add("Kokalolasosmomatot");
+            window.StartRender();
 
             try
-            {
-                Client client = new Client(input);
+            { 
+                remoteName = "localhost";
+                remotePort = 5150;
+                running = true;
+                client = null;
 
+                string input = window.GetInputWithQuestion("Enter your name: ");
 
-                if (!client.Connect(remoteName, remotePort))
-                    throw new InvalidOperationException("Error occurred creating the connection");
+                client = new Client(input);
 
-                client.Send(test);
-
-
-                client.StartReceiving((data) =>
+                while (running)
                 {
                     try
                     {
-                        while (!data.EOF)
-                        {
-                            string name = data.GetString();
-                            string message = data.GetString();
+                        string message = window.GetInputWithQuestion("Skriv ett meddelande: ");
+                        
+                        DecodeMessage(message);
 
-                            StatusMessage(message, name);
-                        }
                     }
                     catch (Exception e)
                     {
                     }
-                });
-
-                while (running)
-                {
-                    Console.WriteLine("Skriv ett meddelande: ");
-                    string message = Console.ReadLine();
-
-                    if (message.ToLower() == "quit")
-                    {
-                        running = false;
-                        continue;
-                    }
-
-                    client.SendMessage(message);
                 }
 
                 client.Close();
@@ -74,27 +62,99 @@ namespace ChatClient
                 ErrorMessage(e.Message);
             }
 
+            window.Abort();
+
             PressAnyKey();
 
         }
 
         static void PressAnyKey()
         {
-            Console.WriteLine("Press any key to continue. . . ");
-            Console.ReadKey();
+            window.GetInputWithQuestion("Press <ENTER> to continue. . . ");
         }
+
+        public static void DecodeMessage(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return;
+            }
+
+            if (message.ToLower() == "help" || message.ToLower() == "?")
+            {
+                ShowHelp();
+                return;
+            }
+
+            if (message.ToLower().IndexOf("command:") == 0)
+            {
+                DecodeCommand(message);
+                
+            }
+            else
+            {
+                client.SendMessage(message);
+            }
+        }
+
+        private static void ShowHelp()
+        {
+            StatusMessage("Here is the help meny, most commands need <command:> before.");
+            StatusMessage("Quit -> Quits the program");
+            StatusMessage("Connect -> Tries to connect to the target host");
+        }
+
+        private static void DecodeCommand(string message)
+        {
+            var list = message.Split(':');
+            var commando = list[1].ToLower();
+
+            if (commando.Contains("quit"))
+            {
+                StatusMessage("Exiting program...");
+                running = false;
+                return;
+            }
+
+            if (commando.Contains("connect"))
+            {
+                if (client.Connect(remoteName, remotePort));
+                {
+                    StatusMessage("Starting receiving from server...");
+                    client.StartReceiving((data) =>
+                    {
+                        try
+                        {
+                            while (!data.EOF)
+                            {
+                                string name = data.GetString();
+                                string messageData = data.GetString();
+
+                                window.Add(new WebMessage(name, messageData));
+                            }
+                        }
+                        catch (Exception e)
+                        {
+
+                        }
+                    });
+                }
+            }
+        }
+        
 
         public static void StatusMessage(string message)
         {
-            StatusMessage(message, "Client");
+            window.Add(new WebMessage("System", message));
         }
         public static void StatusMessage(string message, string user)
         {
+
             Print($"{user}: {message}", ConsoleColor.Green);
         }
         public static void ErrorMessage(string message)
         {
-            Print($"Client: {message}", ConsoleColor.Red);
+            window.Add(new WebMessage("Error", message));
         }
 
         static void Print(string message, ConsoleColor color)
@@ -109,6 +169,7 @@ namespace ChatClient
         public static void Print(string message)
         {
             Console.WriteLine(message);
+            Console.CursorLeft = 1;
         }
 
     }

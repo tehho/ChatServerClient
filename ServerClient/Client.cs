@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 
 namespace ChatClient
 {
@@ -12,23 +11,22 @@ namespace ChatClient
         private Socket _socket;
         public string Name { get; set; }
 
-        private Thread _decodeThread;
-        private bool running;
+        private ThreadWraper _thread;
 
         public Client(Socket socket, ProtocolType protocolType, SocketType socketType)
         {
             _socket = socket;
+            _socket.Blocking = false;
             _protocolType = protocolType;
             _socketType = socketType;
             Name = "";
-            running = false;
         }
 
         public PackageData Receive()
         {
             PackageData ret = new PackageData();
 
-            int rc = 0;
+            int rc;
             byte[] buffer = new byte[PackageData.BufferSize];
 
             if (_protocolType == ProtocolType.Tcp)
@@ -41,6 +39,10 @@ namespace ChatClient
                         ret.Add(buffer, rc);
                         if (rc == PackageData.BufferSize)
                             continue;
+                        break;
+                    }
+                    catch (ObjectDisposedException ode)
+                    {
                         break;
                     }
                     catch (SocketException e)
@@ -62,25 +64,19 @@ namespace ChatClient
 
         public void Shutdown()
         {
+            _thread?.Abort();
             _socket?.Shutdown(SocketShutdown.Both);
             _socket?.Close();
-
-            _decodeThread?.Abort();
         }
 
-        public void StartDecoding( Action<PackageData, bool> Decode)
+        public void StartDecoding(Action<PackageData> Decode)
         {
             
-            _decodeThread = new Thread(() =>
+            _thread = new ThreadWraper(() =>
             {
-                while (running)
-                {
-                    Decode(Receive(), running);
-                }
+                    Decode(Receive());
             });
-
-            running = true;
-            _decodeThread.Start();
+            _thread.Start();
         }
     }
 }
