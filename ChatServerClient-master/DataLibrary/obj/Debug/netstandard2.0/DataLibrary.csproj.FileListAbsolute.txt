@@ -1,0 +1,9 @@
+C:\Users\Tehho\Desktop\ChatServerClient-master\DataLibrary\bin\Debug\netstandard2.0\DataLibrary.deps.json
+C:\Users\Tehho\Desktop\ChatServerClient-master\DataLibrary\bin\Debug\netstandard2.0\DataLibrary.dll
+C:\Users\Tehho\Desktop\ChatServerClient-master\DataLibrary\bin\Debug\netstandard2.0\DataLibrary.pdb
+C:\Users\Tehho\Desktop\ChatServerClient-master\DataLibrary\obj\Debug\netstandard2.0\DataLibrary.csprojResolveAssemblyReference.cache
+C:\Users\Tehho\Desktop\ChatServerClient-master\DataLibrary\obj\Debug\netstandard2.0\DataLibrary.csproj.CoreCompileInputs.cache
+C:\Users\Tehho\Desktop\ChatServerClient-master\DataLibrary\obj\Debug\netstandard2.0\DataLibrary.AssemblyInfoInputs.cache
+C:\Users\Tehho\Desktop\ChatServerClient-master\DataLibrary\obj\Debug\netstandard2.0\DataLibrary.AssemblyInfo.cs
+C:\Users\Tehho\Desktop\ChatServerClient-master\DataLibrary\obj\Debug\netstandard2.0\DataLibrary.dll
+C:\Users\Tehho\Desktop\ChatServerClient-master\DataLibrary\obj\Debug\netstandard2.0\DataLibrary.pdb
