@@ -166,15 +166,26 @@ namespace System
             while (true)
             {
                 var key = Console.ReadKey();
-                needToReRender = true;
+
                 if (key.Key == ConsoleKey.Enter)
                     break;
 
-                input += key.KeyChar;
+                if (key.Key == ConsoleKey.Backspace)
+                {
+                    input = input.Substring(0, input.Length - 1);
+                }
+                else
+                {
+                    input += key.KeyChar;
+                }
+
+                needToReRender = true;
             }
 
             var ret = input;
+
             input = "";
+
             return ret;
         }
 

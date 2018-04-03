@@ -89,7 +89,6 @@ namespace ChatClient
             if (message.ToLower().IndexOf("command:") == 0)
             {
                 DecodeCommand(message);
-                
             }
             else
             {
@@ -102,6 +101,7 @@ namespace ChatClient
             StatusMessage("Here is the help meny, most commands need <command:> before.");
             StatusMessage("Quit -> Quits the program");
             StatusMessage("Connect -> Tries to connect to the target host");
+            StatusMessage("sethost:NAME|IP -> Sets the target server to Name by dns or IP direkt");
         }
 
         private static void DecodeCommand(string message)
@@ -120,6 +120,12 @@ namespace ChatClient
             {
                 remoteName = list[2];
                 StatusMessage($"Setting target to {list[2]}");
+            }
+            else if (commando == "setname")
+            {
+                client.Name = list[2];
+                StatusMessage($"Setting name to {list[2]}");
+
             }
             else if (commando.Contains("connect"))
             {
@@ -148,6 +154,14 @@ namespace ChatClient
                 {
                     StatusMessage("Connection failed...");
                 }
+            }
+            else if (list[1] == "help")
+            {
+                ShowHelp();
+            }
+            else
+            {
+                StatusMessage($"Unknown command {list[1]}");
             }
         }
         

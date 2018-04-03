@@ -13,33 +13,30 @@ namespace ChatClient
         private Socket _socket;
         private SocketType _socketType;
         private ProtocolType _protocolType;
-        private bool _udpConnect;
         private IPEndPoint _destination;
-        private string _name;
         private ThreadWraper _receiveThread;
+
+        public string Name { get; set; }
 
         public Client(string name)
         {
             _socket = null;
             _socketType = SocketType.Stream;
             _protocolType = ProtocolType.Tcp;
-            _udpConnect = false;
             _destination = null;
-            _name = name;
+            Name = name;
         }
 
         public bool IsIP(string data)
         {
-            var list = data.Split('.');
-            if (list.Length != 4)
+            var list = data.Split('.').ToList();
+
+            if (list.Count != 4)
                 return false;
+
             try
             {
-                for (int i = 0; i < 4; i++)
-                {
-                    var test = byte.Parse(list[i]);
-
-                }
+                var test = list.Select(byte.Parse);
             }
             catch (Exception e)
             {
@@ -51,23 +48,17 @@ namespace ChatClient
 
         IPAddress ToIP(string address)
         {
-            var list = address.Split('.');
-            if (list.Length != 4)
+            var list = address.Split('.').ToList();
+            if (list.Count != 4)
                 throw new ArgumentException("IPAddress not . indented.", nameof(address));
 
             try
-            {
-                byte[] temp = new byte[4];
-                for (int i = 0; i < 4; i++)
-                {
-                    temp[i] = byte.Parse(list[i]);
-                }
-
-                return new IPAddress(temp);
+            { 
+                return new IPAddress(list.Select(byte.Parse).ToArray());
             }
             catch (Exception e)
             {
-                throw new ArgumentException("Sum ting wen wong");
+                throw new ArgumentException("Sum ting wen wong", nameof(address),e);
             }
         }
 
@@ -95,11 +86,6 @@ namespace ChatClient
                     {
                         Program.StatusMessage($"Attempting to connect to server: {addr}");
                         _destination = new IPEndPoint(addr, remotePort);
-
-                        if (_protocolType == ProtocolType.Udp && !_udpConnect)
-                        {
-                            break;
-                        }
 
                         _socket.Connect(_destination);
                         Program.StatusMessage($"Connection is OK...");
@@ -138,7 +124,7 @@ namespace ChatClient
         {
             PackageData data = new PackageData();
 
-            data.Add(_name);
+            data.Add(Name);
             data.Add(message);
 
             Send(data);
@@ -149,11 +135,6 @@ namespace ChatClient
             if (_socket == null || _destination == null)
             {
                 throw new InvalidOperationException("You need to establish a connection first");
-            }
-
-            if (_protocolType == ProtocolType.Udp && !_udpConnect)
-            {
-                _socket.SendTo(data.Data, _destination);
             }
             else
             {
@@ -171,19 +152,10 @@ namespace ChatClient
                 {
                     int rc = 0;
                     byte[] buffer = new byte[PackageData.BufferSize];
-
-                    if (_protocolType == ProtocolType.Tcp || _udpConnect)
-                    {
-                        rc = _socket.Receive(buffer);
-
-                    }
-                    else
-                    {
-                        IPEndPoint fromEndPoint = new IPEndPoint(_destination.Address, 0);
-                        EndPoint castFromEndPoint = fromEndPoint;
-                        rc = _socket.ReceiveFrom(buffer, ref castFromEndPoint);
-                        fromEndPoint = (IPEndPoint) castFromEndPoint;
-                    }
+                    IPEndPoint fromEndPoint = new IPEndPoint(_destination.Address, 0);
+                    EndPoint castFromEndPoint = fromEndPoint;
+                    rc = _socket.ReceiveFrom(buffer, ref castFromEndPoint);
+                    fromEndPoint = (IPEndPoint) castFromEndPoint;
 
                     ret.Add(buffer, rc);
 
@@ -211,7 +183,7 @@ namespace ChatClient
 
                 test.Add("command");
                 test.Add("shutdown");
-                test.Add(_name);
+                test.Add(Name);
 
                 Send(test);
 
