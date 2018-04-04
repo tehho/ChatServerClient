@@ -4,9 +4,9 @@
     {
         private string _sender;
         private string _message;
+        private ConsoleColor _color;
 
         public string From => _sender;
-
         public string Message => _message;
 
         public WebMessage(string sender, string message)

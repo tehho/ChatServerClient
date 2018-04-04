@@ -102,6 +102,8 @@ namespace ChatClient
             StatusMessage("Quit -> Quits the program");
             StatusMessage("Connect -> Tries to connect to the target host");
             StatusMessage("sethost:NAME|IP -> Sets the target server to Name by dns or IP direkt");
+            StatusMessage("setname:NAME _> Sets your name to something new");
+            StatusMessage("CLS -> Clears the screen");
         }
 
         private static void DecodeCommand(string message)
@@ -109,7 +111,7 @@ namespace ChatClient
             var list = message.Split(':');
             var commando = list[1].ToLower();
 
-            if (commando.Contains("quit"))
+            if (commando == "quit")
             {
                 StatusMessage("Exiting program...");
                 running = false;
@@ -127,7 +129,11 @@ namespace ChatClient
                 StatusMessage($"Setting name to {list[2]}");
 
             }
-            else if (commando.Contains("connect"))
+            else if (commando == "cls")
+            {
+                window.Messages.Clear();
+            }
+            else if (commando == "connect")
             {
                 if (client.Connect(remoteName, remotePort))
                 {

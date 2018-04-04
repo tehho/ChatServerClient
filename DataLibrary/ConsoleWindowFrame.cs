@@ -9,40 +9,39 @@ namespace System
         public int Height { get; set; }
 
         private string _question;
+        private string _input;
 
-        private string input;
-
-        public Queue<WebMessage> _messages;
+        public Queue<WebMessage> Messages;
 
         private ThreadWraper _renderThread;
-        private bool needToReRender;
+        private bool _needToReRender;
 
         public ConsoleWindowFrame()
         {
             Width = 40;
             Height = 10;
-            _messages = new Queue<WebMessage>();
-            input = "";
+            Messages = new Queue<WebMessage>();
+            _input = "";
             _question = "";
             _renderThread = null;
-            needToReRender = false;
+            _needToReRender = false;
             Console.CursorVisible = false;
         }
         
         public void Add(WebMessage message)
         {
-            needToReRender = true;
-            _messages.Enqueue(message);
-            if (_messages.Count > Height)
+            _needToReRender = true;
+            Messages.Enqueue(message);
+            if (Messages.Count > Height)
             {
-                _messages.Dequeue();
+                Messages.Dequeue();
             }
         }
 
         public void StartRender()
         {
             _renderThread = new ThreadWraper(Render);
-            needToReRender = true;
+            _needToReRender = true;
             _renderThread.Start();
         }
 
@@ -53,55 +52,45 @@ namespace System
 
         public void Render()
         {
-            if (needToReRender)
+            if (_needToReRender)
             {
-                ResetDisplay();
+                int x = Console.CursorLeft;
+                int y = Console.CursorTop;
 
+                ResetDisplay();
                 ResetInput();
 
                 RenderDisplay();
-
                 RenderInput();
 
-                needToReRender = false;
+                Console.SetCursorPosition(x,y);
+
+                _needToReRender = false;
             }
         }
 
         private void RenderDisplay()
         {
-            int x = Console.CursorLeft;
-            int y = Console.CursorTop;
+                Console.SetCursorPosition(1, 1);
 
-            Console.SetCursorPosition(1,1);
-
-            foreach (var message in _messages)
-            {
-                Console.WriteLine(message);
-                Console.CursorLeft = 1;
-            }
-
-            Console.SetCursorPosition(x,y);
+                foreach (var message in Messages)
+                {
+                    Console.WriteLine(message.ToString().FitTo(Width - 2));
+                    Console.CursorLeft = 1;
+                }
         }
 
         private void RenderInput()
         {
-            int x = Console.CursorLeft;
-            int y = Console.CursorTop;
-
             Console.SetCursorPosition(1, Height + 1);
             Console.WriteLine(_question);
 
             Console.CursorLeft = 1;
-            Console.WriteLine(input);
-
-            Console.SetCursorPosition(x, y);
+            Console.WriteLine(_input);
         }
 
         void ResetDisplay()
         {
-            int x = Console.CursorLeft;
-            int y = Console.CursorTop;
-
             Console.SetCursorPosition(0,0);
 
             DrawRow("+", "-");
@@ -113,15 +102,10 @@ namespace System
 
             DrawRow("+", "-");
 
-            Console.SetCursorPosition(x,y);
-
         }
 
         void ResetInput()
         {
-            int x = Console.CursorLeft;
-            int y = Console.CursorTop;
-
             Console.SetCursorPosition(0, Height);
 
             DrawRow("+", "-");
@@ -132,10 +116,7 @@ namespace System
             }
 
             DrawRow("+", "-");
-
-            Console.SetCursorPosition(x, y);
         }
-
 
         void DrawRow(string edge, string content)
         {
@@ -156,35 +137,40 @@ namespace System
         {
             _question = question;
 
+            _needToReRender = true;
+
             return GetInput();
         }
 
         public string GetInput()
         {
-            input = "";
+            _input = "";
 
             while (true)
             {
                 var key = Console.ReadKey();
 
+                
                 if (key.Key == ConsoleKey.Enter)
                     break;
 
                 if (key.Key == ConsoleKey.Backspace)
                 {
-                    input = input.Substring(0, input.Length - 1);
+                    _input = _input.Substring(0, _input.Length - 1);
                 }
                 else
                 {
-                    input += key.KeyChar;
+                    _input += key.KeyChar;
                 }
+                _needToReRender = true;
 
-                needToReRender = true;
             }
 
-            var ret = input;
+            var ret = _input;
 
-            input = "";
+            _input = "";
+
+            _needToReRender = true;
 
             return ret;
         }
